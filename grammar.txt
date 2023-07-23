@@ -1,0 +1,23 @@
+block = { statement }
+statement =   IF LPAREN comparison RPAREN LSQUIRLY block RSQUIRLY
+			| ( CONST | VAR ) ( CONST | VAR ) [ COLON ANNOT ] ASSIGN expression el
+			| WHEN RPAREN comparison LPAREN LSQUIRLY block RSQUIRLY el
+			| [ ASYNC ] FUNCTION IDENT LPAREN [ IDENT { SEPERATOR IDENT } ] RPAREN FN_DELIM LSQUIRLY block RSQUIRLY
+			| RETURN IDENT el
+			| AFTER LPAREN STR RPAREN idk yet
+			| CLS IDENT LSQUIRLY block RSQUIRLY
+			| DEL idk yet
+			| REV el
+			| PRINT LPAREN idk yet RPAREN el
+expression = ( type | IDENT ) { ( ADD | SUB | MUL | DIV ) ( type | IDENT ) }
+comparison = [ NOT ] ( type | IDENT ) { eq ( type | IDENT ) }
+eq = LOOSE_EQ | EQ | STRICT_EQ | STICTER_EQ
+type = BOOL | NUM | STR | FLOAT | TIME | INFINITY | CHR | DGT
+el = { ENDLINE | INVENDLINE }
+
+
+=== INFO ===
+{} = one or more
+() = grouping
+[] = zero or one
+|  = or
