@@ -24,10 +24,10 @@ namespace DreamBerdInterp
             curChar = text[0];
         }
 
-        private void getNextChar()
+        public void getNextChar()
         {
             curPos++;
-            if (curPos == text.Length)
+            if (curPos >= text.Length) // Rather than erroring with out of bounds, just dump a bunch of EOFs
             {
                 curChar = '\0';
                 return;
@@ -37,36 +37,47 @@ namespace DreamBerdInterp
 
         private char peek()
         {
-            if (curChar == '\0')
-            {
-                return '\0';
-            }
-            return text[curPos + 1];
+            return curChar == '\0' ? '\0' : text[curPos + 1];
         }
 
         private bool isFunc(string value)
         {
+            // I'm not 110% sure why this works (I did write it myself), but I don't think it's wrong
+            // The idea is that we check if the next character in function is the next character in the value
+            // If it's further in, like at index 2 or 3, then we have an error, because that means that eithr
+            // A: Other characters are in there
+            // B: Wrong order
+            // -1 means that we can also skip characters in "function"
+            // The variable "found" is used to make sure at least 1 match is found
+
             string fn = "function";
-            int i = 0;
-            int j = 0;
-            while (i < fn.Length && j < value.Length)
+
+            int index;
+            bool found = false;
+            for (int i = 0; i < fn.Length; i++)
             {
-                while (value[j] == fn[i])
+                index = value.IndexOf(fn[i]);
+                if (index == 0)
                 {
-                    i++;
-                    if (i == fn.Length)
-                    {
-                        return false;
-                    }
+                    found = true;
                 }
-                i++;
-                j++;
+                else if (index == -1)
+                {
+                    continue;
+                }
+                else
+                {
+                    return false;
+                }
+                value = value.Substring(1);
             }
-            return true;
+
+            return found;
         }
 
         public Token getNextToken()
         {
+            // Basic tokens
             switch (curChar)
             {
                 case '\0':
@@ -122,6 +133,8 @@ namespace DreamBerdInterp
                 case '/':
                     return new Token(Token.tokenType.DIV, curChar.ToString());
                 case '=':
+
+                    // There's probably a better way to write this, but it's not the fun way
                     if (peek() == '=')
                     {
                         getNextChar();
@@ -145,8 +158,11 @@ namespace DreamBerdInterp
 
             }
 
+            // Keywords, strings, etc. etc.
             if (char.IsLetter(curChar))
             {
+
+                // Getting the full text of token
                 string tempTok = curChar.ToString();
                 while (char.IsAsciiLetterOrDigit(peek()))
                 {
@@ -154,6 +170,7 @@ namespace DreamBerdInterp
                     tempTok += curChar;
                 }
 
+                // As per DreamBerd specification, functions can be declared with any text that is in order and contains letters of "function"
                 if (isFunc(tempTok))
                 {
                     return new Token(Token.tokenType.FUNCTION, tempTok);
@@ -180,6 +197,7 @@ namespace DreamBerdInterp
                     return new Token(Token.tokenType.INFINITY, tempTok);
                 }
 
+                // I'll keep these 3 seperate for now just in case something changes
                 if (tempTok == "True")
                 {
                     return new Token(Token.tokenType.BOOL, tempTok);
@@ -207,11 +225,13 @@ namespace DreamBerdInterp
                     tempTok += curChar;
                 }
 
+                // Timing for lifetimes
                 if (tempTok[tempTok.Length - 1] == 's')
                 {
                     return new Token(Token.tokenType.TIME, tempTok);
                 }
 
+                // Since a number is an array of digits
                 if (tempTok.Length == 1)
                 {
                     return new Token(Token.tokenType.DGT, tempTok);
@@ -228,13 +248,16 @@ namespace DreamBerdInterp
             if (curChar == '"')
             {
                 string tempTok = "";
-                while (peek() != '"')
-                {
-                    getNextChar();
-                }
 
                 getNextChar();
+                do
+                {
+                    tempTok += curChar;
+                    getNextChar();
+                }
+                while (curChar != '"');
 
+                // Character if you didn't gather
                 if (tempTok.Length == 1)
                 {
                     return new Token(Token.tokenType.CHR, tempTok);
@@ -242,8 +265,6 @@ namespace DreamBerdInterp
 
                 return new Token(Token.tokenType.STR, tempTok);
             }
-
-            getNextChar();
 
             return new Token(Token.tokenType.ILLEGAL, "ILLEGAL");
         }

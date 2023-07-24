@@ -11,6 +11,7 @@ namespace DreamBerdInterp
         public Panic(string msg)
         {
             Console.WriteLine(msg);
+            Console.WriteLine("Press any key to continue.");
             Console.ReadKey(true);
         }
     }

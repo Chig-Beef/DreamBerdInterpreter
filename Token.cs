@@ -24,7 +24,7 @@ namespace DreamBerdInterp
             {
                 return keyWords[value];
             }
-            return -1;
+            return -1; // Not a keyword
         }
 
         public static bool isValidAnnotation(string value)
@@ -40,8 +40,10 @@ namespace DreamBerdInterp
                 return false;
             }
 
+            // Check if it's an array of type
             if (value.Substring(value.Length - 3, 2) == "[]")
             {
+                // Strip off the "[]" and check the remaining part
                 value = value.Substring(0, value.Length - 2);
                 return isValidAnnotation(value);
             }
@@ -49,6 +51,8 @@ namespace DreamBerdInterp
             return false;
         }
 
+        // For checking if a string is a keyword and getting the relevant integer value
+        // Integers were used instead of the tokenType so that -1 can be returned as false
         private static Dictionary<string, int> keyWords = new Dictionary<string, int>
         {
             { "if", 30 },
@@ -68,6 +72,7 @@ namespace DreamBerdInterp
             { "use", 45 },
         };
 
+        // For checking whether a string could be a type annotation
         private static string[] annotations = new string[]
         {
             "Int",
