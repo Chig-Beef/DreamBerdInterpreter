@@ -39,11 +39,22 @@ namespace DreamBerdInterp
             {
                 Logic.start();
             }
+            else
+            {
+                err.raise();
+            }
         }
 
         public void getNextToken()
         {
             Logic.takeToken(curToken);
+            curToken = peekToken;
+            peekToken = lexer.getNextToken();
+            lexer.getNextChar();
+        }
+
+        public void getNextTokenVoid()
+        {
             curToken = peekToken;
             peekToken = lexer.getNextToken();
             lexer.getNextChar();
@@ -55,10 +66,10 @@ namespace DreamBerdInterp
             while (curToken.type != Token.tokenType.EOF)
             {
                 err = statement();
-                if (err != null) // Oh my gosh Go
-                {
-                    return err;
-                }
+
+                // Oh my gosh Go
+                if (err != null) return err;
+
                 getNextToken();
             }
             return null;
@@ -73,8 +84,96 @@ namespace DreamBerdInterp
                 case Token.tokenType.IF:
                     break;
                 case Token.tokenType.CONST:
+                    getNextToken();
+                    switch (curToken.type)
+                    {
+                        case Token.tokenType.CONST:
+                            getNextToken();
+                            break;
+                        case Token.tokenType.VAR:
+                            getNextToken();
+                            break;
+                        default:
+                            return new Panic("Invalid syntax.");
+                    }
+
+                    if (curToken.type == Token.tokenType.COLON)
+                    {
+                        getNextToken();
+                        if (curToken.type != Token.tokenType.ANNOT)
+                        {
+                            return new Panic("Invalid syntax.");
+                        }
+                        getNextToken();
+                    }
+
+                    if (curToken.type != Token.tokenType.ASSIGN)
+                    {
+                        return new Panic("Invalid syntax.");
+                    }
+                    getNextToken();
+
+                    err = expression();
+                    if (err != null) return err;
+
+                    err = el();
+                    if (err != null) return err;
+
                     break;
                 case Token.tokenType.VAR:
+                    getNextToken();
+                    getNextTokenVoid();
+                    switch (curToken.type)
+                    {
+                        case Token.tokenType.CONST:
+                            getNextToken();
+                            break;
+                        case Token.tokenType.VAR:
+                            getNextToken();
+                            break;
+                        default:
+                            return new Panic("Invalid syntax.");
+                    }
+
+                    getNextTokenVoid();
+                    if (curToken.type != Token.tokenType.IDENT)
+                    {
+                        return new Panic("Invalid syntax.");
+                    }
+
+                    getNextToken();
+                    if (curToken.type == Token.tokenType.COLON)
+                    {
+                        getNextToken();
+                        if (curToken.type != Token.tokenType.ANNOT)
+                        {
+                            return new Panic("Invalid syntax.");
+                        }
+                        getNextToken();
+                    }
+                    else
+                    {
+                        getNextTokenVoid();
+                    }
+
+                    if (curToken.value != "=")
+                    {
+                        return new Panic("Invalid syntax.");
+                    }
+                    curToken.type = Token.tokenType.ASSIGN;
+                    getNextToken();
+
+                    if (curToken.type == Token.tokenType.SPACE)
+                    {
+                        getNextTokenVoid();
+                    }
+
+                    err = expression();
+                    if (err != null) return err;
+
+                    err = el();
+                    if (err != null) return err;
+
                     break;
                 case Token.tokenType.WHEN:
                     break;
@@ -104,10 +203,7 @@ namespace DreamBerdInterp
                     if (curToken.type != Token.tokenType.IDENT)
                     {
                         err = type(); // print("Hello, World"
-                        if (err != null)
-                        {
-                            return err;
-                        }
+                        if (err != null) return err;
                     }
 
                     getNextToken();
@@ -118,10 +214,7 @@ namespace DreamBerdInterp
 
                     getNextToken();
                     err = el(); // print("Hello, World")!!!!
-                    if (err != null)
-                    {
-                        return err;
-                    }
+                    if (err != null) return err;
 
                     break;
                 default:
@@ -133,12 +226,60 @@ namespace DreamBerdInterp
 
         public Panic expression()
         {
+            Panic err = type();
+
+            if (err != null)
+            {
+                if (curToken.type != Token.tokenType.IDENT)
+                {
+                    return new Panic("Invalid Syntax.");
+                }
+            }
+
+            getNextToken();
+
+            err = mo();
+            while (err == null)
+            {
+                getNextToken();
+
+                err = type();
+
+                if (err != null)
+                {
+                    if (curToken.type != Token.tokenType.IDENT)
+                    {
+                        return new Panic("Invalid syntax.");
+                    }
+                }
+                getNextToken();
+
+                err = mo();
+            }
+
             return null;
         }
 
         public Panic comparison()
         {
             return null;
+        }
+
+        public Panic mo()
+        {
+            switch (curToken.type)
+            {
+                case Token.tokenType.ADD:
+                    return null;
+                case Token.tokenType.SUB:
+                    return null;
+                case Token.tokenType.MUL:
+                    return null;
+                case Token.tokenType.DIV:
+                    return null;
+            }
+
+            return new Panic("Invalid syntax.");
         }
 
         public Panic eq()
